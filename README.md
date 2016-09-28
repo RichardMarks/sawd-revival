@@ -3,6 +3,9 @@ SAWD
 
 Developed for an RPGDX contest. Managed to win first place with this complete traditional console style role playing game rendered completely with ASCII characters. A custom built Win32 console engine sits behind this complex 24-hour game project.
 
+## LICENSE
+
+MIT License
 
 ## Original readme.txt below
 SAWD Small ASCII Walk-around Demo
