@@ -1,0 +1,12 @@
+{
+  "name": "sawd-revival",
+  "version": "1.0.0",
+  "description": "SAWD-Revival",
+  "main": "index.js",
+  "author": "Richard Marks <ccpsceo@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "gulp": "^3.9.1"
+  }
+}
