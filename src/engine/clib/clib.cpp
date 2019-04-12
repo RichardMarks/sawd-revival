@@ -63,6 +63,10 @@ int SetConsoleScreenBufferSize(unsigned int handle, _COORD *size)
       ConsoleWindowBuffer.Size = ConsoleWindowInfo.BufferSize.X * ConsoleWindowInfo.BufferSize.Y;
       ConsoleWindowBuffer.Data = new _CHAR_INFO[ConsoleWindowBuffer.Size];
       memset(ConsoleWindowBuffer.Data, 0, sizeof(_CHAR_INFO) * ConsoleWindowBuffer.Size);
+    } else {
+      ConsoleWindowBuffer.Size = ConsoleWindowInfo.BufferSize.X * ConsoleWindowInfo.BufferSize.Y;
+      ConsoleWindowBuffer.Data = new _CHAR_INFO[ConsoleWindowBuffer.Size];
+      memset(ConsoleWindowBuffer.Data, 0, sizeof(_CHAR_INFO) * ConsoleWindowBuffer.Size);
     }
   }
   else
@@ -126,6 +130,11 @@ int SetConsoleCursorPosition(void *handle, _COORD &coord)
 int WriteConsole(void *handle, const char *s, unsigned int length, unsigned long *written, void *reserved)
 {
   int startIndex = ConsoleWindowInfo.Cursor.X + ConsoleWindowInfo.Cursor.Y * ConsoleWindowInfo.BufferSize.X;
+  int endIndex = startIndex + length;
+  if (endIndex >= ConsoleWindowBuffer.Size)
+  {
+    length -= ConsoleWindowBuffer.Size - endIndex;
+  }
   char *p = (char *)s;
   int n = 0;
   *written = 0;
