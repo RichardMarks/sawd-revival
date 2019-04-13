@@ -11,6 +11,26 @@
 
 #include "engine/clib/clib.h"
 
+typedef struct t_Controller {
+  // is down this frame
+  bool up;
+  bool down;
+  bool left;
+  bool right;
+  bool a;
+  bool b;
+  bool c;
+
+  // was pressed this frame
+  bool up_p;
+  bool down_p;
+  bool left_p;
+  bool right_p;
+  bool a_p;
+  bool b_p;
+  bool c_p;
+} Controller;
+
 class Platform {
   public:
     bool initialize (int screenWidth, int screenHeight);
@@ -29,8 +49,6 @@ class Platform {
     float mouseX;
     float mouseY;
     unsigned char key[ALLEGRO_KEY_MAX];
-
-  protected:
 
     void drawPCFontCharacter (float x, float y, unsigned char character, unsigned short attributes);
     void copyConsoleBufferToDisplayBuffer ();
@@ -53,6 +71,8 @@ class Platform {
     float bufferY;
     float bufferW;
     float bufferH;
+
+    Controller p1;
 };
 
 #endif // !PLATFORM_H

@@ -5,6 +5,8 @@
 
 #include "clib.h"
 
+clibui clui;
+
 _CONSOLE_WINDOW_BUFFER ConsoleWindowBuffer;
 _CONSOLE_WINDOW_INFO ConsoleWindowInfo;
 
@@ -63,7 +65,9 @@ int SetConsoleScreenBufferSize(unsigned int handle, _COORD *size)
       ConsoleWindowBuffer.Size = ConsoleWindowInfo.BufferSize.X * ConsoleWindowInfo.BufferSize.Y;
       ConsoleWindowBuffer.Data = new _CHAR_INFO[ConsoleWindowBuffer.Size];
       memset(ConsoleWindowBuffer.Data, 0, sizeof(_CHAR_INFO) * ConsoleWindowBuffer.Size);
-    } else {
+    }
+    else
+    {
       ConsoleWindowBuffer.Size = ConsoleWindowInfo.BufferSize.X * ConsoleWindowInfo.BufferSize.Y;
       ConsoleWindowBuffer.Data = new _CHAR_INFO[ConsoleWindowBuffer.Size];
       memset(ConsoleWindowBuffer.Data, 0, sizeof(_CHAR_INFO) * ConsoleWindowBuffer.Size);
@@ -156,22 +160,28 @@ int WriteConsole(void *handle, const char *s, unsigned int length, unsigned long
   return 1;
 }
 
-int ReadConsoleOutput (void* handle, _CHAR_INFO* buffer, _COORD& size, _COORD& coord, _SMALL_RECT* region) {
-  if (!buffer || !region) {
+int ReadConsoleOutput(void *handle, _CHAR_INFO *buffer, _COORD &size, _COORD &coord, _SMALL_RECT *region)
+{
+  if (!buffer || !region)
+  {
     return 0;
   }
-  for (int y = 0; y < size.Y; y += 1) {
-    for (int x = 0; x < size.X; x += 1) {
+  for (int y = 0; y < size.Y; y += 1)
+  {
+    for (int x = 0; x < size.X; x += 1)
+    {
       int srcIndex = x + region->Left + ((y + region->Top) * ConsoleWindowInfo.BufferSize.X);
-      if (srcIndex >= ConsoleWindowBuffer.Size) {
+      if (srcIndex >= ConsoleWindowBuffer.Size)
+      {
         return 0;
       }
       int dstIndex = x + coord.X + ((y + coord.Y) * size.X);
-      if (dstIndex >= size.X * size.Y) {
+      if (dstIndex >= size.X * size.Y)
+      {
         return 0;
       }
-      _CHAR_INFO& source = ConsoleWindowBuffer.Data[srcIndex];
-      _CHAR_INFO& dest = buffer[dstIndex];
+      _CHAR_INFO &source = ConsoleWindowBuffer.Data[srcIndex];
+      _CHAR_INFO &dest = buffer[dstIndex];
       dest.Char = source.Char;
       dest.Attributes = source.Attributes;
     }
@@ -179,22 +189,28 @@ int ReadConsoleOutput (void* handle, _CHAR_INFO* buffer, _COORD& size, _COORD& c
   return 1;
 }
 
-int WriteConsoleOutput (void* handle, _CHAR_INFO* buffer, _COORD& size, _COORD& coord, _SMALL_RECT* region) {
-  if (!buffer || !region) {
+int WriteConsoleOutput(void *handle, _CHAR_INFO *buffer, _COORD &size, _COORD &coord, _SMALL_RECT *region)
+{
+  if (!buffer || !region)
+  {
     return 0;
   }
-  for (int y = 0; y < size.Y; y += 1) {
-    for (int x = 0; x < size.X; x += 1) {
+  for (int y = 0; y < size.Y; y += 1)
+  {
+    for (int x = 0; x < size.X; x += 1)
+    {
       int dstIndex = x + region->Left + ((y + region->Top) * ConsoleWindowInfo.BufferSize.X);
-      if (dstIndex >= ConsoleWindowBuffer.Size) {
+      if (dstIndex >= ConsoleWindowBuffer.Size)
+      {
         return 0;
       }
       int srcIndex = x + coord.X + ((y + coord.Y) * size.X);
-      if (srcIndex >= size.X * size.Y) {
+      if (srcIndex >= size.X * size.Y)
+      {
         return 0;
       }
-      _CHAR_INFO& source = buffer[srcIndex];
-      _CHAR_INFO& dest = ConsoleWindowBuffer.Data[dstIndex];
+      _CHAR_INFO &source = buffer[srcIndex];
+      _CHAR_INFO &dest = ConsoleWindowBuffer.Data[dstIndex];
       dest.Char = source.Char;
       dest.Attributes = source.Attributes;
     }
@@ -499,26 +515,6 @@ void clib::close_window(clibwindow *wnd)
   delete wnd;
 }
 
-void clib::show_message_centered(int lines, ...)
-{
-  // TODO: original used a while loop, will have to think how to refactor this to work in an event based manner
-}
-
-void clib::show_message(int lines, ...)
-{
-  // TODO: original used a while loop, will have to think how to refactor this to work in an event based manner
-}
-
-int clib::show_choice(char *message)
-{
-  // TODO: original used a while loop, will have to think how to refactor this to work in an event based manner
-}
-
-int clib::show_choice_ex(char *message, int options, ...)
-{
-  // TODO: original used a while loop, will have to think how to refactor this to work in an event based manner
-}
-
 void clib::draw_button(int x, int y, int w, int h, char *caption, unsigned short bgc, unsigned short fgc)
 {
   this->set_bgcolor(bgc);
@@ -558,4 +554,296 @@ void clib::draw_button(int x, int y, int w, int h, char *caption, unsigned short
 
   // draw the caption
   this->outchars(x + 2, y + 1, caption);
+}
+
+clibui::clibui()
+{
+  memset(&info_, 0, sizeof(info_));
+}
+
+clibui::~clibui()
+{
+  close_secondary_window();
+  close_primary_window();
+}
+
+bool clibui::has_choice_value()
+{
+  return !info_.Active && info_.Ready;
+}
+
+int clibui::get_choice_value()
+{
+  int choice = info_.Choice;
+  info_.Ready = false;
+  return choice;
+}
+
+void clibui::show_message_centered(int lines, ...)
+{
+  close_primary_window();
+
+  info_.UIType = UITYPE_MESSAGE_CENTERED;
+  info_.Box[0] = 5;
+  info_.Box[1] = (25 / 2) - ((lines + 4) / 2);
+  info_.Box[2] = 70;
+  info_.Box[3] = lines + 4;
+
+  info_.MessageX = info_.Box[0] + 2;
+  info_.MessageY = info_.Box[1] + 2;
+
+  open_primary_window();
+
+  va_list vl;
+  va_start(vl, lines);
+  for (int index = 0; index < lines; index += 1)
+  {
+    char *message = va_arg(vl, char *);
+    cl_->outchars(40 - (strlen(message) / 2), info_.MessageY + index, message);
+  }
+  va_end(vl);
+}
+
+void clibui::show_message(int lines, ...)
+{
+  close_primary_window();
+
+  info_.UIType = UITYPE_MESSAGE;
+  info_.Box[0] = 5;
+  info_.Box[1] = (25 / 2) - ((lines + 4) / 2);
+  info_.Box[2] = 70;
+  info_.Box[3] = lines + 4;
+
+  info_.MessageX = info_.Box[0] + 2;
+  info_.MessageY = info_.Box[1] + 2;
+
+  open_primary_window();
+
+  va_list vl;
+  va_start(vl, lines);
+  for (int index = 0; index < lines; index += 1)
+  {
+    char *message = va_arg(vl, char *);
+    cl_->outchars(info_.MessageX, info_.MessageY + index, message);
+  }
+  va_end(vl);
+}
+
+void clibui::show_choice(char *message)
+{
+  close_primary_window();
+
+  info_.Choice = 0;
+  info_.Ready = false;
+  info_.UIType = UITYPE_CHOICE;
+  info_.Box[0] = 40 - (34 / 2);
+  info_.Box[1] = (25 / 2) - (9 / 2);
+  info_.Box[2] = 34;
+  info_.Box[3] = 9;
+
+  info_.MessageX = info_.Box[0] + 2;
+  info_.MessageY = info_.Box[1] + 2;
+  info_.CursorY = 0;
+  info_.OptionX = info_.MessageX + (info_.Box[2] / 2) - 5;
+  info_.OptionY = 2;
+  info_.MessageX -= 1;
+  info_.MessageX += (info_.Box[2] / 2) - strlen(message) / 2;
+
+  open_primary_window();
+
+  cl_->outchars(info_.MessageX, info_.MessageY, message);
+}
+
+void clibui::show_choice_ex(char *message, int options, ...)
+{
+  close_secondary_window();
+  close_primary_window();
+
+  info_.Choice = 0;
+  info_.Ready = false;
+  info_.UIType = UITYPE_CHOICE_EX;
+  info_.Box[0] = 40 - (34 / 2);
+  info_.Box[1] = (25 / 2) - ((options + 4) / 2);
+  info_.Box[2] = 34;
+  info_.Box[3] = options + 4;
+
+  info_.Box2[0] = info_.Box[0];
+  info_.Box2[1] = info_.Box[1] - 2;
+  info_.Box2[2] = info_.Box[2];
+  info_.Box2[3] = 3;
+
+  info_.MessageX = info_.Box[0] + 2;
+  info_.MessageY = info_.Box[1] + 2;
+  info_.CursorY = 0;
+  info_.OptionY = 0;
+  info_.OptionX = info_.MessageX + (info_.Box[2] / 2) - 5;
+  info_.Options = options;
+
+  info_.MessageX -= 1;
+  info_.MessageX += (info_.Box[2] / 2) - strlen(message) / 2;
+
+  open_primary_window();
+  open_secondary_window();
+
+  cl_->outchars(info_.MessageX, info_.MessageY - 5, message);
+
+  va_list vl;
+  va_start(vl, options);
+  for (int index = 0; index < options; index += 1)
+  {
+    char *text = va_arg(vl, char *);
+    cl_->outchars(info_.MessageX, info_.MessageY + index, text);
+  }
+  va_end(vl);
+}
+
+void clibui::update(bool up, bool down, bool left, bool right, bool a, bool b, bool c)
+{
+  if (!info_.Active)
+  {
+    return;
+  }
+
+  switch (info_.UIType)
+  {
+  case UITYPE_MESSAGE_CENTERED:
+  {
+    if (a || b)
+    {
+      close_primary_window();
+    }
+  }
+  break;
+  case UITYPE_MESSAGE:
+  {
+    if (a || b)
+    {
+      close_primary_window();
+    }
+  }
+  break;
+  case UITYPE_CHOICE:
+  {
+    if (up)
+    {
+      if (info_.CursorY > 0)
+      {
+        info_.CursorY = 0;
+      }
+    }
+    else if (down)
+    {
+      if (info_.CursorY < 1)
+      {
+        info_.CursorY = 1;
+      }
+    }
+    else if (a || b)
+    {
+      // 1 = yes 0 = no
+      info_.Choice = info_.CursorY > 0 ? 0 : 1;
+      info_.Ready = true;
+      close_primary_window();
+    }
+  }
+  break;
+  case UITYPE_CHOICE_EX:
+  {
+    if (up)
+    {
+      if (info_.CursorY > 0)
+      {
+        info_.CursorY -= 1;
+      }
+    }
+    else if (down)
+    {
+      if (info_.CursorY < info_.Options - 1)
+      {
+        info_.CursorY += 1;
+      }
+    }
+    else if (a || b)
+    {
+      // choice is cursor y + 1
+      info_.Choice = info_.CursorY + 1;
+      info_.Ready = true;
+      close_secondary_window();
+      close_primary_window();
+    }
+  }
+  break;
+  default:
+    break;
+  }
+}
+
+void clibui::render()
+{
+  if (!info_.Active)
+  {
+    return;
+  }
+
+  switch (info_.UIType)
+  {
+  case UITYPE_MESSAGE_CENTERED:
+  {
+  }
+  break;
+  case UITYPE_MESSAGE:
+  {
+  }
+  break;
+  case UITYPE_CHOICE:
+  {
+    cl_->outchars(info_.OptionX, info_.MessageY + info_.OptionY, (char *)"  Yes");
+    cl_->outchars(info_.OptionX, info_.MessageY + info_.OptionY + 1, (char *)"  No ");
+    cl_->outchar(info_.OptionX, info_.MessageY + info_.OptionY + info_.CursorY, (char)175);
+  }
+  break;
+  case UITYPE_CHOICE_EX:
+  {
+    {
+      for (int i = 0; i < info_.Options; i += 1)
+      {
+        cl_->outchar(info_.Box[0] + 2, info_.Box[1] + 2 + info_.OptionY + i, ' ');
+      }
+      cl_->outchar(info_.Box[0] + 2, info_.Box[1] + 2 + info_.OptionY + info_.CursorY, (char)175);
+    }
+  }
+  break;
+  default:
+    break;
+  }
+}
+
+void clibui::open_primary_window()
+{
+  info_.Window = cl_->open_window(info_.Box[0], info_.Box[1], info_.Box[2], info_.Box[3]);
+  info_.Active = true;
+}
+
+void clibui::open_secondary_window()
+{
+  info_.Window2 = cl_->open_window(info_.Box2[0], info_.Box2[1], info_.Box2[2], info_.Box2[3]);
+}
+
+void clibui::close_primary_window()
+{
+  if (info_.Window != NULL)
+  {
+    cl_->close_window(info_.Window);
+    info_.Window = NULL;
+    info_.Active = false;
+  }
+}
+
+void clibui::close_secondary_window()
+{
+  if (info_.Window2 != NULL)
+  {
+    cl_->close_window(info_.Window2);
+    info_.Window2 = NULL;
+  }
 }

@@ -69,10 +69,6 @@ class clib {
     clibwindow* open_window (int x, int y, int w, int h, unsigned short bgc=4, unsigned short fgc=1|2|4|8);
     clibwindow* open_window_noframe (int x, int y, int w, int h, unsigned short bgc=4, unsigned short fgc=1|2|4|8);
     void close_window (clibwindow* wnd);
-    void show_message_centered (int lines, ...);
-    void show_message (int lines, ...);
-    int show_choice (char* message);
-    int show_choice_ex (char* message, int options, ...);
     void draw_button (int x, int y, int w, int h, char* caption, unsigned short bgc=4, unsigned short fgc=1|2|4|8);
 
     void* screen_;
@@ -80,5 +76,56 @@ class clib {
     unsigned short bgc_;
     unsigned short fgc_;
 };
+
+#define UITYPE_MESSAGE_CENTERED 1
+#define UITYPE_MESSAGE 2
+#define UITYPE_CHOICE 3
+#define UITYPE_CHOICE_EX 4
+
+typedef struct t_UI_INFO {
+  bool Active;
+  bool Ready;
+  int UIType;
+  int Choice;
+  int CursorX;
+  int CursorY;
+  int OptionX;
+  int OptionY;
+  int Options;
+  int MessageX;
+  int MessageY;
+  int Box[4];
+  int Box2[4];
+  clibwindow* Window;
+  clibwindow* Window2;
+} _UI_INFO;
+
+class clibui {
+  public:
+    clibui ();
+    ~clibui ();
+
+    bool has_choice_value ();
+    int get_choice_value();
+
+    void show_message_centered (int lines, ...);
+    void show_message (int lines, ...);
+    void show_choice (char* message);
+    void show_choice_ex (char* message, int options, ...);
+
+    void update (bool up, bool down, bool left, bool right, bool a, bool b, bool c);
+    void render ();
+
+    clib* cl_;
+    _UI_INFO info_;
+
+  protected:
+    void open_primary_window();
+    void open_secondary_window();
+    void close_primary_window();
+    void close_secondary_window();
+};
+
+extern clibui clui;
 
 #endif // !CLIB_H

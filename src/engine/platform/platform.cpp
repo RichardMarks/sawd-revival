@@ -186,6 +186,7 @@ bool Platform::initialize(int screenWidth, int screenHeight)
   palette[15] = WHITE;
 
   cl = new clib();
+  clui.cl_ = cl;
 
   cl->screen80x50();
 
@@ -237,6 +238,8 @@ bool Platform::initialize(int screenWidth, int screenHeight)
     printf("Unable to load font.png\n");
     return false;
   }
+
+  memset(&p1, 0, sizeof(p1));
 
   frames = 0;
   running = true;
@@ -315,6 +318,14 @@ void Platform::update()
     ticked = true;
     redraw = true;
 
+    p1.up = key[ALLEGRO_KEY_UP];
+    p1.down = key[ALLEGRO_KEY_DOWN];
+    p1.left = key[ALLEGRO_KEY_LEFT];
+    p1.right = key[ALLEGRO_KEY_RIGHT];
+    p1.a = key[ALLEGRO_KEY_Z];
+    p1.b = key[ALLEGRO_KEY_X];
+    p1.c = key[ALLEGRO_KEY_C];
+
     // clear key buffer
     for (int i = 0; i < ALLEGRO_KEY_MAX; i += 1)
     {
@@ -328,13 +339,33 @@ void Platform::update()
     mouseY = (event.mouse.y - bufferY) * 1 / scale;
     break;
 
-  case ALLEGRO_EVENT_KEY_DOWN:
+  case ALLEGRO_EVENT_KEY_DOWN: {
+    switch (event.keyboard.keycode) {
+      case ALLEGRO_KEY_UP: p1.up_p = true; break;
+      case ALLEGRO_KEY_DOWN: p1.down_p = true; break;
+      case ALLEGRO_KEY_LEFT: p1.left_p = true; break;
+      case ALLEGRO_KEY_RIGHT: p1.right_p = true; break;
+      case ALLEGRO_KEY_Z: p1.a_p = true; break;
+      case ALLEGRO_KEY_X: p1.b_p = true; break;
+      case ALLEGRO_KEY_C: p1.c_p = true; break;
+      default: break;
+    }
     key[event.keyboard.keycode] = 1 | 2;
-    break;
+  } break;
 
-  case ALLEGRO_EVENT_KEY_UP:
+  case ALLEGRO_EVENT_KEY_UP: {
+    switch (event.keyboard.keycode) {
+      case ALLEGRO_KEY_UP: p1.up_p = false; break;
+      case ALLEGRO_KEY_DOWN: p1.down_p = false; break;
+      case ALLEGRO_KEY_LEFT: p1.left_p = false; break;
+      case ALLEGRO_KEY_RIGHT: p1.right_p = false; break;
+      case ALLEGRO_KEY_Z: p1.a_p = false; break;
+      case ALLEGRO_KEY_X: p1.b_p = false; break;
+      case ALLEGRO_KEY_C: p1.c_p = false; break;
+      default: break;
+    }
     key[event.keyboard.keycode] &= 2;
-    break;
+  } break;
 
   case ALLEGRO_EVENT_DISPLAY_CLOSE:
     running = false;
