@@ -142,6 +142,7 @@ int WriteConsole(void *handle, const char *s, unsigned int length, unsigned long
   {
     char character = *p;
     ConsoleWindowBuffer.Data[startIndex + n].Char = character;
+    ConsoleWindowBuffer.Data[startIndex + n].Attributes = ConsoleWindowInfo.TextAttribute;
     ConsoleWindowInfo.Cursor.X += 1;
     if (ConsoleWindowInfo.Cursor.X >= ConsoleWindowInfo.BufferSize.X)
     {

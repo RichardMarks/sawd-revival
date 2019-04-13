@@ -1,36 +1,43 @@
 #include "platform.h"
 
-bool Platform::initialize (int screenWidth, int screenHeight) {
+bool Platform::initialize(int screenWidth, int screenHeight)
+{
   printf("init platform\n");
 
-  if (!al_init()) {
+  if (!al_init())
+  {
     printf("Could not init allegro\n");
     return false;
   }
 
-  if (!al_install_keyboard()) {
+  if (!al_install_keyboard())
+  {
     printf("Could not init keyboard\n");
     return false;
   }
 
-  if (!al_install_mouse()) {
+  if (!al_install_mouse())
+  {
     printf("Could not init mouse\n");
     return false;
   }
 
-  if (!al_install_audio()) {
+  if (!al_install_audio())
+  {
     printf("Count not init audio\n");
     return false;
   }
 
-  this->timer = al_create_timer(1.0 / 30.0);
-  if (!this->timer) {
+  timer = al_create_timer(1.0 / 30.0);
+  if (!timer)
+  {
     printf("Could not init timer\n");
     return false;
   }
 
-  this->queue = al_create_event_queue();
-  if (!this->queue) {
+  queue = al_create_event_queue();
+  if (!queue)
+  {
     printf("Could not init event queue\n");
     return 1;
   }
@@ -39,8 +46,9 @@ bool Platform::initialize (int screenWidth, int screenHeight) {
   int windowHeight = 1080;
   al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
 
-  this->disp = al_create_display(windowWidth, windowHeight);
-  if (!this->disp) {
+  disp = al_create_display(windowWidth, windowHeight);
+  if (!disp)
+  {
     printf("Could not init display %d x %d\n", windowWidth, windowHeight);
     return false;
   }
@@ -48,45 +56,52 @@ bool Platform::initialize (int screenWidth, int screenHeight) {
   windowHeight = al_get_display_height(disp);
   printf("Created display %d x %d\n", windowWidth, windowHeight);
 
-  this->displayBuffer = al_create_bitmap(screenWidth, screenHeight);
-  if (!this->displayBuffer) {
+  displayBuffer = al_create_bitmap(screenWidth, screenHeight);
+  if (!displayBuffer)
+  {
     printf("Could not create display buffer %d x %d", screenWidth, screenHeight);
     return false;
   }
 
-  if (!al_init_font_addon()) {
+  if (!al_init_font_addon())
+  {
     printf("Could not init font addon\n");
     return false;
   }
 
-  if (!al_init_ttf_addon()) {
+  if (!al_init_ttf_addon())
+  {
     printf("Could not init ttf addon\n");
     return false;
   }
 
-  if (!al_init_image_addon()) {
+  if (!al_init_image_addon())
+  {
     printf("Could not init image addon\n");
     return false;
   }
 
-  if (!al_init_acodec_addon()) {
+  if (!al_init_acodec_addon())
+  {
     printf("Could not init audio codec addon\n");
     return false;
   }
 
-  if (!al_reserve_samples(1)) {
+  if (!al_reserve_samples(1))
+  {
     printf("Could not reserve samples\n");
     return false;
   }
 
-  this->debugFont = al_create_builtin_font();
-  if (!this->debugFont) {
+  debugFont = al_create_builtin_font();
+  if (!debugFont)
+  {
     printf("Could not create debug font\n");
     return false;
   }
 
-  this->width = screenWidth;
-  this->height = screenHeight;
+  width = screenWidth;
+  height = screenHeight;
 
   // float sx = windowWidth / screenWidth;
   // float sy = windowHeight / screenHeight;
@@ -102,102 +117,237 @@ bool Platform::initialize (int screenWidth, int screenHeight) {
   float scaleX = (windowWidth - scaleWidth) * 0.5f;
   float scaleY = (windowHeight - scaleHeight) * 0.5f;
 
-  this->bufferX = scaleX;
-  this->bufferY = scaleY;
-  this->bufferW = scaleWidth;
-  this->bufferH = scaleHeight;
-  this->scale = scale;
+  bufferX = scaleX;
+  bufferY = scaleY;
+  bufferW = scaleWidth;
+  bufferH = scaleHeight;
+  scale = scale;
 
-  al_register_event_source(this->queue, al_get_keyboard_event_source());
-  al_register_event_source(this->queue, al_get_mouse_event_source());
-  al_register_event_source(this->queue, al_get_display_event_source(this->disp));
-  al_register_event_source(this->queue, al_get_timer_event_source(this->timer));
+  al_register_event_source(queue, al_get_keyboard_event_source());
+  al_register_event_source(queue, al_get_mouse_event_source());
+  al_register_event_source(queue, al_get_display_event_source(disp));
+  al_register_event_source(queue, al_get_timer_event_source(timer));
 
-  memset(this->key, 0, sizeof(this->key));
+  memset(key, 0, sizeof(key));
 
-  this->frames = 0;
-  this->running = true;
+  // init palette
+  // https://devblogs.microsoft.com/commandline/updating-the-windows-console-colors/
+#ifdef LEGACY_COLORS
+#define BLACK al_map_rgb(0, 0, 0)
+#define DARK_BLUE al_map_rgb(0, 0, 128)
+#define DARK_GREEN al_map_rgb(0, 128, 0)
+#define DARK_CYAN al_map_rgb(0, 128, 128)
+#define DARK_RED al_map_rgb(128, 0, 0)
+#define DARK_MAGENTA al_map_rgb(128, 0, 128)
+#define DARK_YELLOW al_map_rgb(128, 128, 0)
+#define DARK_WHITE al_map_rgb(192, 192, 192)
+#define BRIGHT_BLACK al_map_rgb(128, 128, 128)
+#define BRIGHT_BLUE al_map_rgb(0, 0, 255)
+#define BRIGHT_GREEN al_map_rgb(0, 255, 0)
+#define BRIGHT_CYAN al_map_rgb(0, 255, 255)
+#define BRIGHT_RED al_map_rgb(255, 0, 0)
+#define BRIGHT_MAGENTA al_map_rgb(255, 0, 255)
+#define BRIGHT_YELLOW al_map_rgb(255, 255, 0)
+#define WHITE al_map_rgb(255, 255, 255)
+#else
+#define BLACK al_map_rgba(12, 12, 12, 128)
+#define DARK_BLUE al_map_rgba(0, 55, 218, 128)
+#define DARK_GREEN al_map_rgba(19, 161, 14, 128)
+#define DARK_CYAN al_map_rgba(58, 150, 221, 128)
+#define DARK_RED al_map_rgba(197, 15, 13, 128)
+#define DARK_MAGENTA al_map_rgba(136, 23, 152, 128)
+#define DARK_YELLOW al_map_rgba(193, 156, 0, 128)
+#define DARK_WHITE al_map_rgba(204, 204, 204, 128)
+#define BRIGHT_BLACK al_map_rgba(118, 118, 118, 128)
+#define BRIGHT_BLUE al_map_rgba(59, 120, 255, 128)
+#define BRIGHT_GREEN al_map_rgba(22, 198, 12, 128)
+#define BRIGHT_CYAN al_map_rgba(97, 214, 214, 128)
+#define BRIGHT_RED al_map_rgba(231, 72, 86, 128)
+#define BRIGHT_MAGENTA al_map_rgba(180, 0, 158, 128)
+#define BRIGHT_YELLOW al_map_rgba(249, 241, 165, 128)
+#define WHITE al_map_rgba(242, 242, 242, 128)
+#endif // LEGACY_COLORS
+
+  palette[0] = BLACK;
+  palette[1] = DARK_BLUE;
+  palette[2] = DARK_GREEN;
+  palette[3] = DARK_CYAN;
+  palette[4] = DARK_RED;
+  palette[5] = DARK_MAGENTA;
+  palette[6] = DARK_YELLOW;
+  palette[7] = DARK_WHITE;
+  palette[8] = BRIGHT_BLACK;
+  palette[9] = BRIGHT_BLUE;
+  palette[10] = BRIGHT_GREEN;
+  palette[11] = BRIGHT_CYAN;
+  palette[12] = BRIGHT_RED;
+  palette[13] = BRIGHT_MAGENTA;
+  palette[14] = BRIGHT_YELLOW;
+  palette[15] = WHITE;
+
+  cl = new clib();
+
+  cl->screen80x50();
+
+  cl->set_bgcolor(0);
+  cl->set_fgcolor(1|2|8);
+  cl->cls();
+
+  char* title[] =
+  {
+    "CCPS Solutions Presents",
+    "  ",
+    " SSSS  AAA  W   W DDDD",
+    "S     A   A W   W D   D",
+    " SSS  AAAAA W W W D   D",
+    "    S A   A W W W D   D",
+    "SSSS  A   A WW WW DDDD",
+    "  ",
+    "  ",
+    "Simple ASCII Walk-around Demo",
+    "  ",
+    "RPGDX 2008 ASCII Mini-RPG Contest",
+    "  ",
+    "http://www.ccpssolutions.com"
+  };
+
+  for (int n = 0; n < 14; n++)
+  {
+    // cl->set_bgcolor(n);
+    cl->set_fgcolor(15 - n);
+    int x = 40 - (strlen(title[n]) / 2);
+    cl->outchars(x, 4 + n, title[n]);
+  }
+
+  // clibwindow* wnd = cl->open_window(0, 0, 40, 25, 4, 1|2|4|8);
+
+  // // print the console buffer to stdout to test
+  // for (int y = 0; y < 50; y += 1) {
+  //   for (int x = 0; x < 80; x += 1) {
+  //     printf("%c", ConsoleWindowBuffer.Data[x + y * 80].Char);
+  //   }
+  //   printf("\n");
+  // }
+
+  // cl->close_window(wnd);
+
+  pcFontBitmap = al_load_bitmap("assets/font.png");
+  if (!pcFontBitmap)
+  {
+    printf("Unable to load font.png\n");
+    return false;
+  }
+
+  frames = 0;
+  running = true;
   return true;
 }
 
-void Platform::destroy () {
+void Platform::destroy()
+{
   printf("destroy platform\n");
 
-  if (this->debugFont) {
-    al_destroy_font(this->debugFont);
-    this->debugFont = NULL;
+  if (pcFontBitmap)
+  {
+    al_destroy_bitmap(pcFontBitmap);
+    pcFontBitmap = NULL;
   }
 
-  if (this->displayBuffer) {
-    al_destroy_bitmap(this->displayBuffer);
-    this->displayBuffer = NULL;
+  if (cl)
+  {
+    delete cl;
+    cl = 0;
   }
 
-  if (this->disp) {
-    al_destroy_display(this->disp);
-    this->disp = NULL;
+  if (debugFont)
+  {
+    al_destroy_font(debugFont);
+    debugFont = NULL;
   }
 
-  if (this->timer) {
-    al_destroy_timer(this->timer);
-    this->timer = NULL;
+  if (displayBuffer)
+  {
+    al_destroy_bitmap(displayBuffer);
+    displayBuffer = NULL;
   }
 
-  if (this->queue) {
-    al_destroy_event_queue(this->queue);
-    this->queue = NULL;
+  if (disp)
+  {
+    al_destroy_display(disp);
+    disp = NULL;
+  }
+
+  if (timer)
+  {
+    al_destroy_timer(timer);
+    timer = NULL;
+  }
+
+  if (queue)
+  {
+    al_destroy_event_queue(queue);
+    queue = NULL;
   }
 }
 
-void Platform::openWindow () {
-  al_start_timer(this->timer);
-  this->redraw = false;
+void Platform::openWindow()
+{
+  al_start_timer(timer);
+  redraw = false;
 }
 
-bool Platform::isReadyToUpdate () {
-  return this->ticked;
+bool Platform::isReadyToUpdate()
+{
+  return ticked;
 }
 
-void Platform::update () {
+void Platform::update()
+{
   // printf("platform update\n");
 
-  al_wait_for_event(this->queue, &this->event);
+  al_wait_for_event(queue, &event);
 
-  this->ticked = false;
-  switch (this->event.type) {
-    case ALLEGRO_EVENT_TIMER: {
-      this->ticked = true;
-      this->redraw = true;
+  ticked = false;
+  switch (event.type)
+  {
+  case ALLEGRO_EVENT_TIMER:
+  {
+    ticked = true;
+    redraw = true;
 
-      // clear key buffer
-      for (int i = 0; i < ALLEGRO_KEY_MAX; i += 1) {
-        this->key[i] &= 1;
-      }
-    } break;
+    // clear key buffer
+    for (int i = 0; i < ALLEGRO_KEY_MAX; i += 1)
+    {
+      key[i] &= 1;
+    }
+  }
+  break;
 
-    case ALLEGRO_EVENT_MOUSE_AXES:
-      this->mouseX = (this->event.mouse.x - this->bufferX) * 1 / this->scale;
-      this->mouseY = (this->event.mouse.y - this->bufferY) * 1 / this->scale;
-      break;
+  case ALLEGRO_EVENT_MOUSE_AXES:
+    mouseX = (event.mouse.x - bufferX) * 1 / scale;
+    mouseY = (event.mouse.y - bufferY) * 1 / scale;
+    break;
 
-    case ALLEGRO_EVENT_KEY_DOWN:
-      this->key[this->event.keyboard.keycode] = 1 | 2;
-      break;
+  case ALLEGRO_EVENT_KEY_DOWN:
+    key[event.keyboard.keycode] = 1 | 2;
+    break;
 
-    case ALLEGRO_EVENT_KEY_UP:
-      this->key[this->event.keyboard.keycode] &= 2;
-      break;
+  case ALLEGRO_EVENT_KEY_UP:
+    key[event.keyboard.keycode] &= 2;
+    break;
 
-    case ALLEGRO_EVENT_DISPLAY_CLOSE:
-      this->running = false;
-      break;
+  case ALLEGRO_EVENT_DISPLAY_CLOSE:
+    running = false;
+    break;
   }
 }
 
-bool Platform::isReadyToDraw () {
-  if (this->redraw && al_is_event_queue_empty(this->queue)) {
-    this->redraw = false;
-    al_set_target_bitmap(this->displayBuffer);
+bool Platform::isReadyToDraw()
+{
+  if (redraw && al_is_event_queue_empty(queue))
+  {
+    redraw = false;
+    al_set_target_bitmap(displayBuffer);
     al_clear_to_color(al_map_rgb(0, 0, 0));
 
     return true;
@@ -205,24 +355,118 @@ bool Platform::isReadyToDraw () {
   return false;
 }
 
-void Platform::render () {
+void Platform::render()
+{
   // printf("platform render\n");
 
-  al_draw_text(this->debugFont, al_map_rgb(255, 255, 255), 0, 0, 0, "Hello, World");
+  copyConsoleBufferToDisplayBuffer();
+  // for (int i = 0; i < 16; i += 1)
+  // {
+  //   al_draw_text(debugFont, palette[i], 0, 8 * i, 0, "Hello, World");
+  // }
 
-  al_set_target_backbuffer(this->disp);
+  al_set_target_backbuffer(disp);
   al_clear_to_color(al_map_rgb(0x30, 0x30, 0x30));
   al_draw_scaled_bitmap(
-    this->displayBuffer,
-    0,
-    0,
-    this->width,
-    this->height,
-    this->bufferX,
-    this->bufferY,
-    this->bufferW,
-    this->bufferH,
-    0
-  );
+      displayBuffer,
+      0,
+      0,
+      width,
+      height,
+      bufferX,
+      bufferY,
+      bufferW,
+      bufferH,
+      0);
   al_flip_display();
+}
+
+void Platform::drawPCFontCharacter(float x, float y, unsigned char character, unsigned short attributes)
+{
+  // find appropriate glyph in pc font bitmap
+  int lettersPerRow = 16;
+  int glyphWidth = 8;
+  int glyphHeight = 8;
+  int glyphX = (int)((int)character / lettersPerRow) * glyphWidth;
+  int glyphY = (int)((int)character % lettersPerRow) * glyphHeight;
+
+  // use a solid fill character for the background
+  unsigned char solid = 219;
+  int solidX = 104;
+  int solidY = 88;
+
+  int fgc = 0;
+
+  // solve the foreground color
+  if (attributes & FOREGROUND_RED) { fgc |= 4; }
+  if (attributes & FOREGROUND_GREEN) { fgc |= 2; }
+  if (attributes & FOREGROUND_BLUE) { fgc |= 1; }
+  if (attributes & FOREGROUND_INTENSITY) { fgc |= 8; }
+
+  // special case: if the character is 219
+  // only draw the foreground colored one,
+  // as the background will not be seen anyway
+  if (solid == character) {
+    al_draw_tinted_bitmap_region(
+      pcFontBitmap,
+      palette[fgc],
+      solidX,
+      solidY,
+      glyphWidth,
+      glyphHeight,
+      x,
+      y,
+      0
+    );
+  } else {
+    // common case: draw solid with bgc and character with fgc
+    int bgc = 0;
+
+    // solve the background color
+    if (attributes & BACKGROUND_RED) { bgc |= 4; }
+    if (attributes & BACKGROUND_GREEN) { bgc |= 2; }
+    if (attributes & BACKGROUND_BLUE) { bgc |= 1; }
+    if (attributes & BACKGROUND_INTENSITY) { bgc |= 8; }
+
+    al_draw_tinted_bitmap_region(
+      pcFontBitmap,
+      palette[bgc],
+      solidX,
+      solidY,
+      glyphWidth,
+      glyphHeight,
+      x,
+      y,
+      0
+    );
+
+    al_draw_tinted_bitmap_region(
+      pcFontBitmap,
+      palette[fgc],
+      glyphX,
+      glyphY,
+      glyphWidth,
+      glyphHeight,
+      x,
+      y,
+      0
+    );
+  }
+}
+
+void Platform::copyConsoleBufferToDisplayBuffer()
+{
+  int consoleBufferWidth = ConsoleWindowInfo.BufferSize.X;
+  int consoleBufferHeight = ConsoleWindowInfo.BufferSize.Y;
+  for (int row = 0; row < consoleBufferHeight; row += 1)
+  {
+    float y = row * 8;
+    for (int column = 0; column < consoleBufferWidth; column += 1)
+    {
+      int index = column + row * consoleBufferWidth;
+      _CHAR_INFO &cell = ConsoleWindowBuffer.Data[index];
+      float x = column * 8;
+      drawPCFontCharacter(x, y, cell.Char, cell.Attributes);
+    }
+  }
 }
