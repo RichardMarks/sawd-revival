@@ -822,6 +822,7 @@ void clibui::open_primary_window()
 {
   info_.Window = cl_->open_window(info_.Box[0], info_.Box[1], info_.Box[2], info_.Box[3]);
   info_.Active = true;
+  printf("opening primary window\n");
 }
 
 void clibui::open_secondary_window()
@@ -836,6 +837,7 @@ void clibui::close_primary_window()
     cl_->close_window(info_.Window);
     info_.Window = NULL;
     info_.Active = false;
+    printf("closing primary window\n");
   }
 }
 

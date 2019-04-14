@@ -42,9 +42,10 @@ bool Platform::initialize(int screenWidth, int screenHeight)
     return 1;
   }
 
-  int windowWidth = 1920;
-  int windowHeight = 1080;
-  al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+  int windowWidth = 1280;
+  int windowHeight = 720;
+  // al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+  al_set_new_display_flags(ALLEGRO_WINDOWED);
 
   disp = al_create_display(windowWidth, windowHeight);
   if (!disp)
@@ -52,8 +53,8 @@ bool Platform::initialize(int screenWidth, int screenHeight)
     printf("Could not init display %d x %d\n", windowWidth, windowHeight);
     return false;
   }
-  windowWidth = al_get_display_width(disp);
-  windowHeight = al_get_display_height(disp);
+  // windowWidth = al_get_display_width(disp);
+  // windowHeight = al_get_display_height(disp);
   printf("Created display %d x %d\n", windowWidth, windowHeight);
 
   displayBuffer = al_create_bitmap(screenWidth, screenHeight);
@@ -190,35 +191,34 @@ bool Platform::initialize(int screenWidth, int screenHeight)
 
   cl->screen80x50();
 
-  cl->set_bgcolor(0);
-  cl->set_fgcolor(1|2|8);
-  cl->cls();
+  // cl->set_bgcolor(0);
+  // cl->set_fgcolor(1 | 2 | 8);
+  // cl->cls();
 
-  char* title[] =
-  {
-    "CCPS Solutions Presents",
-    "  ",
-    " SSSS  AAA  W   W DDDD",
-    "S     A   A W   W D   D",
-    " SSS  AAAAA W W W D   D",
-    "    S A   A W W W D   D",
-    "SSSS  A   A WW WW DDDD",
-    "  ",
-    "  ",
-    "Simple ASCII Walk-around Demo",
-    "  ",
-    "RPGDX 2008 ASCII Mini-RPG Contest",
-    "  ",
-    "http://www.ccpssolutions.com"
-  };
+  // char *title[] =
+  //     {
+  //         "CCPS Solutions Presents",
+  //         "  ",
+  //         " SSSS  AAA  W   W DDDD",
+  //         "S     A   A W   W D   D",
+  //         " SSS  AAAAA W W W D   D",
+  //         "    S A   A W W W D   D",
+  //         "SSSS  A   A WW WW DDDD",
+  //         "  ",
+  //         "  ",
+  //         "Simple ASCII Walk-around Demo",
+  //         "  ",
+  //         "RPGDX 2008 ASCII Mini-RPG Contest",
+  //         "  ",
+  //         "http://www.ccpssolutions.com"};
 
-  for (int n = 0; n < 14; n++)
-  {
-    // cl->set_bgcolor(n);
-    cl->set_fgcolor(15 - n);
-    int x = 40 - (strlen(title[n]) / 2);
-    cl->outchars(x, 4 + n, title[n]);
-  }
+  // for (int n = 0; n < 14; n++)
+  // {
+  //   // cl->set_bgcolor(n);
+  //   cl->set_fgcolor(15 - n);
+  //   int x = 40 - (strlen(title[n]) / 2);
+  //   cl->outchars(x, 4 + n, title[n]);
+  // }
 
   // clibwindow* wnd = cl->open_window(0, 0, 40, 25, 4, 1|2|4|8);
 
@@ -318,13 +318,7 @@ void Platform::update()
     ticked = true;
     redraw = true;
 
-    p1.up = key[ALLEGRO_KEY_UP];
-    p1.down = key[ALLEGRO_KEY_DOWN];
-    p1.left = key[ALLEGRO_KEY_LEFT];
-    p1.right = key[ALLEGRO_KEY_RIGHT];
-    p1.a = key[ALLEGRO_KEY_Z];
-    p1.b = key[ALLEGRO_KEY_X];
-    p1.c = key[ALLEGRO_KEY_C];
+    update_controller(p1, key);
 
     // clear key buffer
     for (int i = 0; i < ALLEGRO_KEY_MAX; i += 1)
@@ -339,33 +333,17 @@ void Platform::update()
     mouseY = (event.mouse.y - bufferY) * 1 / scale;
     break;
 
-  case ALLEGRO_EVENT_KEY_DOWN: {
-    switch (event.keyboard.keycode) {
-      case ALLEGRO_KEY_UP: p1.up_p = true; break;
-      case ALLEGRO_KEY_DOWN: p1.down_p = true; break;
-      case ALLEGRO_KEY_LEFT: p1.left_p = true; break;
-      case ALLEGRO_KEY_RIGHT: p1.right_p = true; break;
-      case ALLEGRO_KEY_Z: p1.a_p = true; break;
-      case ALLEGRO_KEY_X: p1.b_p = true; break;
-      case ALLEGRO_KEY_C: p1.c_p = true; break;
-      default: break;
-    }
+  case ALLEGRO_EVENT_KEY_DOWN:
+  {
     key[event.keyboard.keycode] = 1 | 2;
-  } break;
+  }
+  break;
 
-  case ALLEGRO_EVENT_KEY_UP: {
-    switch (event.keyboard.keycode) {
-      case ALLEGRO_KEY_UP: p1.up_p = false; break;
-      case ALLEGRO_KEY_DOWN: p1.down_p = false; break;
-      case ALLEGRO_KEY_LEFT: p1.left_p = false; break;
-      case ALLEGRO_KEY_RIGHT: p1.right_p = false; break;
-      case ALLEGRO_KEY_Z: p1.a_p = false; break;
-      case ALLEGRO_KEY_X: p1.b_p = false; break;
-      case ALLEGRO_KEY_C: p1.c_p = false; break;
-      default: break;
-    }
+  case ALLEGRO_EVENT_KEY_UP:
+  {
     key[event.keyboard.keycode] &= 2;
-  } break;
+  }
+  break;
 
   case ALLEGRO_EVENT_DISPLAY_CLOSE:
     running = false;
@@ -429,59 +407,83 @@ void Platform::drawPCFontCharacter(float x, float y, unsigned char character, un
   int fgc = 0;
 
   // solve the foreground color
-  if (attributes & FOREGROUND_RED) { fgc |= 4; }
-  if (attributes & FOREGROUND_GREEN) { fgc |= 2; }
-  if (attributes & FOREGROUND_BLUE) { fgc |= 1; }
-  if (attributes & FOREGROUND_INTENSITY) { fgc |= 8; }
+  if (attributes & FOREGROUND_RED)
+  {
+    fgc |= 4;
+  }
+  if (attributes & FOREGROUND_GREEN)
+  {
+    fgc |= 2;
+  }
+  if (attributes & FOREGROUND_BLUE)
+  {
+    fgc |= 1;
+  }
+  if (attributes & FOREGROUND_INTENSITY)
+  {
+    fgc |= 8;
+  }
 
   // special case: if the character is 219
   // only draw the foreground colored one,
   // as the background will not be seen anyway
-  if (solid == character) {
+  if (solid == character)
+  {
     al_draw_tinted_bitmap_region(
-      pcFontBitmap,
-      palette[fgc],
-      solidX,
-      solidY,
-      glyphWidth,
-      glyphHeight,
-      x,
-      y,
-      0
-    );
-  } else {
+        pcFontBitmap,
+        palette[fgc],
+        solidX,
+        solidY,
+        glyphWidth,
+        glyphHeight,
+        x,
+        y,
+        0);
+  }
+  else
+  {
     // common case: draw solid with bgc and character with fgc
     int bgc = 0;
 
     // solve the background color
-    if (attributes & BACKGROUND_RED) { bgc |= 4; }
-    if (attributes & BACKGROUND_GREEN) { bgc |= 2; }
-    if (attributes & BACKGROUND_BLUE) { bgc |= 1; }
-    if (attributes & BACKGROUND_INTENSITY) { bgc |= 8; }
+    if (attributes & BACKGROUND_RED)
+    {
+      bgc |= 4;
+    }
+    if (attributes & BACKGROUND_GREEN)
+    {
+      bgc |= 2;
+    }
+    if (attributes & BACKGROUND_BLUE)
+    {
+      bgc |= 1;
+    }
+    if (attributes & BACKGROUND_INTENSITY)
+    {
+      bgc |= 8;
+    }
 
     al_draw_tinted_bitmap_region(
-      pcFontBitmap,
-      palette[bgc],
-      solidX,
-      solidY,
-      glyphWidth,
-      glyphHeight,
-      x,
-      y,
-      0
-    );
+        pcFontBitmap,
+        palette[bgc],
+        solidX,
+        solidY,
+        glyphWidth,
+        glyphHeight,
+        x,
+        y,
+        0);
 
     al_draw_tinted_bitmap_region(
-      pcFontBitmap,
-      palette[fgc],
-      glyphX,
-      glyphY,
-      glyphWidth,
-      glyphHeight,
-      x,
-      y,
-      0
-    );
+        pcFontBitmap,
+        palette[fgc],
+        glyphX,
+        glyphY,
+        glyphWidth,
+        glyphHeight,
+        x,
+        y,
+        0);
   }
 }
 
